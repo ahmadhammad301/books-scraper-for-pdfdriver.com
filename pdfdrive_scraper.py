@@ -50,42 +50,45 @@ def get_urls(url,all_pages=False):
 
 
 
-def get_book(url):
-    try:
-        request= requests.get(url) 
-    except Exception as e:
-        print(f' ConnectionResetError{str(e)}')
-        renew_connection()
-        session = requests.session()
-        session.proxies = proxies
-        request= session.get(url)    
+def get_books_Details(book_url_list):
+    booksFinalUrls=[]
+    for idx,url in enumerate(book_url_list):
+        try:
+            request= requests.get(url) 
+        except Exception as e:
+            print(f' ConnectionResetError{str(e)}')
+            #renew_connection()
+            session = requests.session()
+            session.proxies = proxies
+            request= session.get(url)    
 
-    book_soup=BeautifulSoup(request.content,'lxml') # make the soup from selenium driver
+        book_soup=BeautifulSoup(request.content,'lxml') # make the soup from selenium driver
 
-    # print("exception occured",e)
-    title_ = book_soup.find('h1').text.strip()
-    try:
-        l=book_soup.find(class_='ebook-buttons').find('button').attrs['data-preview']
-        download_url=base_url+'/download.pdf?'+l.split('session=')[0].split('?')[1]+'h='+l.split('session=')[1]+'&u=cache&ext=pdf'
-    except Exception:
-        download_url='not found'
+        # print("exception occured",e)
+        title_ = book_soup.find('h1').text.strip()
+        try:
+            l=book_soup.find(class_='ebook-buttons').find('button').attrs['data-preview']
+            download_url=base_url+'/download.pdf?'+l.split('session=')[0].split('?')[1]+'h='+l.split('session=')[1]+'&u=cache&ext=pdf'
+        except Exception:
+            download_url='not found'
+        
+        book_details=dict(
+                title = title_,
+                book_page_url = url,
+                download_url = download_url
+            )
+        print("book url in pdf:  ",download_url)
+        
+        booksFinalUrls.append(book_details)
     
-    book_details=dict(
-            title = title_,
-            book_page_url = url,
-            download_url = download_url
-        )
-    print("book url in pdf:  ",download_url)
-    
-    return book_details
+    return booksFinalUrls
 
-def download_book(book_idx):
-    i=book_idx
-    print(i)
-    book_name = file['title'][i].replace(':',u'\uff1a')
-    full_path = skill+"/"+book_name+".pdf"
-    path=skill
-    if file['download_url'][i] == 'not found ':
+def download_book(download_Details):
+    
+    book_name = download_Details[0].replace(':',u'\uff1a')
+    full_path = "savedBooks"+"/"+book_name+".pdf"
+    path= "savedBooks"
+    if download_Details[1] == 'not found ':
         print('book has no download url')
     else:
         full_path
@@ -95,12 +98,10 @@ def download_book(book_idx):
         if  os.path.exists(full_path):
             print('book exists')
         else:
-            wget.download(file['download_url'][i], "{}".format(full_path))
+            wget.download(download_Details[1], "{}".format(full_path))
         print(full_path)
 
-
-if __name__=="__main__":
-    
+def main():
     skill = input("Enter the skill: ")
     skill = skill.replace(" ","%20")
     url = search_url.format(skill)
@@ -109,9 +110,8 @@ if __name__=="__main__":
     
     books=[]
     count=0
-    for idx,url in enumerate(all_book_urls):
-        print("book num {} of {}, url:  {}".format(idx+1,len(all_book_urls),url))
-        books.append(get_book(url))
+
+    books=get_books_Details(all_book_urls)
     
     #saving in an excel file 
     file=pd.DataFrame(books) # global file 
@@ -125,5 +125,10 @@ if __name__=="__main__":
     #resource https://docs.python.org/3/library/concurrent.futures.html
     book_index =[i for i in range(len(file))]
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        results =concurrent.futures.wait([executor.submit(download_book, index) for index in book_index])
+        results =concurrent.futures.wait([executor.submit(download_book, [file['title'][index],file['download_url'][index]]) for index in book_index])
     print('books downloaded')
+
+
+if __name__=="__main__":
+
+    main()
