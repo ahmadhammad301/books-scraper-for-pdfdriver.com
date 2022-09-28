@@ -84,7 +84,6 @@ def get_books_Details(book_url_list):
     return booksFinalUrls
 
 def download_book(download_Details):
-    
     book_name = download_Details[0].replace(':',u'\uff1a')
     full_path = "savedBooks"+"/"+book_name+".pdf"
     path= "savedBooks"
@@ -101,7 +100,7 @@ def download_book(download_Details):
             wget.download(download_Details[1], "{}".format(full_path))
         print(full_path)
 
-def main():
+def Main():
     skill = input("Enter the skill: ")
     skill = skill.replace(" ","%20")
     url = search_url.format(skill)
@@ -109,12 +108,11 @@ def main():
     all_book_urls = get_urls(url)
     
     books=[]
-    count=0
 
     books=get_books_Details(all_book_urls)
     
     #saving in an excel file 
-    file=pd.DataFrame(books) # global file 
+    file=pd.DataFrame(books) 
     file.drop_duplicates(inplace=True)
     
     skill=skill.replace("%20",' ')+' books'
@@ -129,6 +127,7 @@ def main():
     print('books downloaded')
 
 
+
 if __name__=="__main__":
 
-    main()
+    Main()
