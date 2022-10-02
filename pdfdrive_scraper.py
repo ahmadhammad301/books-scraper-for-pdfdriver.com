@@ -108,7 +108,6 @@ def Main():
     all_book_urls = get_urls(url)
     
     books=[]
-
     books=get_books_Details(all_book_urls)
     
     #saving in an excel file 
@@ -125,8 +124,6 @@ def Main():
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results =concurrent.futures.wait([executor.submit(download_book, [file['title'][index],file['download_url'][index]]) for index in book_index])
     print('books downloaded')
-
-
 
 if __name__=="__main__":
 
